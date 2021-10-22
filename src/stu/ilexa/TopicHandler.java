@@ -5,6 +5,7 @@ public class TopicHandler {
     private String illuminance = "";
     private String motion = "";
     private String sound = "";
+    private String voltage = "";
 
     private static TopicHandler topicHandler;
 
@@ -24,6 +25,8 @@ public class TopicHandler {
         topicHandler.sound = sound;
     }
 
+    public void setVoltage(String voltage){topicHandler.voltage=voltage;}
+
     public static TopicHandler getInstance() {
         if(topicHandler ==null){
             topicHandler = new TopicHandler();}
@@ -31,7 +34,11 @@ public class TopicHandler {
     }
 
     public Entry getEntry() {
-       return new Entry(topicHandler.temperature, topicHandler.illuminance, topicHandler.motion, topicHandler.sound, java.util.Calendar.getInstance().getTime().toString(), 0);
+       return new Entry(topicHandler.temperature, topicHandler.illuminance, topicHandler.motion, topicHandler.sound, java.util.Calendar.getInstance().getTime().toString(), 21);
+    }
+
+    public Entry8 getEntry8(){
+        return new Entry8(topicHandler.temperature,topicHandler.motion,topicHandler.voltage);
     }
 
 }
