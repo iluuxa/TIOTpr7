@@ -25,166 +25,206 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.Timer;
 
+/**
+ * Основной класс, содержащий выбор режима работы, методы подключения к стенду, сохранения файлов
+ */
 public class Main {
 
+    /**
+     * Основной метод, предназначенный для выбора режима работы и вызова соответствующих методов
+     * @param args аргументы командной строки. Не используются
+     */
     public static void main(String[] args) {
-        String publisherId = UUID.randomUUID().toString();
+        Scanner in = new Scanner(System.in);
+        System.out.println("Введите режим работы программы:\n1 - сохранение данных для варианта 4 работы 7\n2 - сохранение данных для варианта 4 работы 8\n3 - Вывод сохранённых данных в консоль");
+        int n = in.nextInt();
+        if (n == 3) { //Вызов методов парсинга XML и JSON файлов. Чтение проводится из директории "Документы"
+            FileParser.parseJSON(Paths.get(new JFileChooser().getFileSystemView().getDefaultDirectory().getPath() + "/WB-JSON.txt"));
+            FileParser.parseXML(new JFileChooser().getFileSystemView().getDefaultDirectory().getPath() + "/WB-XML.xml");
+        } else {
+            System.out.println("Введите номер стенда:");
+            int address = in.nextInt();
+            IMqttClient subscriber = getConnectedSubscriber(address);
+            TopicHandler topicHandler = TopicHandler.getInstance();
+            if (subscriber != null) {
+                switch (n) {
+                    case 1 -> handleForFiles(subscriber, topicHandler, address);
+                    case 2 -> handleForGraphs(subscriber, topicHandler);
+                }
+            }
+        }
+    }
+
+    /**
+     * Статический метод, предназначенный для подписки на топики и сохранения файлов для последующего их преобразования в графики для практической работы №8
+     * @param subscriber   экземпляр подписчика
+     * @param topicHandler экземпляр класса для сохранения значений
+     */
+    public static void handleForGraphs(IMqttClient subscriber, TopicHandler topicHandler) {
+        ArrayList<EntryGraph> entryGraphArrayList = new ArrayList<>();
         try {
-            IMqttClient subscriber = new MqttClient("tcp://192.168.2.21:1883", publisherId);
+            subscriber.subscribe("/devices/wb-map12e_23/controls/Ch 1 P L1", (topic, msg) -> {
+                System.out.println("Voltage: " + msg);
+                topicHandler.setVoltage(msg.toString());
+            });
+            subscriber.subscribe("/devices/wb-msw-v3_21/controls/Current Motion", (topic, msg) -> {
+                System.out.println("Current Motion: " + msg);
+                topicHandler.setMotion(msg.toString());
+            });
+            subscriber.subscribe("/devices/wb-ms_11/controls/Temperature", (topic, msg) -> {
+                System.out.println("Temperature: " + msg);
+                topicHandler.setTemperature(msg.toString());
+            });
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    entryGraphArrayList.add(topicHandler.getEntry8());
+
+
+                    DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
+                    DocumentBuilder documentBuilder = documentFactory.newDocumentBuilder();
+                    Document document = documentBuilder.newDocument();
+                    Element root = document.createElement("root");
+                    document.appendChild(root);
+                    for (int i = 0; i < entryGraphArrayList.size(); i++) {
+                        Attr number = document.createAttribute("n");
+                        number.setValue(String.valueOf(i));
+                        Element entry = document.createElement("Entry");
+                        entry.setAttributeNode(number);
+                        Element temperature = document.createElement("temperature");
+                        temperature.appendChild(document.createTextNode(entryGraphArrayList.get(i).getTemperature()));
+                        Element motion = document.createElement("motion");
+                        motion.appendChild(document.createTextNode(entryGraphArrayList.get(i).getMotion()));
+                        Element voltage = document.createElement("voltage");
+                        voltage.appendChild(document.createTextNode(entryGraphArrayList.get(i).getVoltage()));
+                        root.appendChild(entry);
+                        entry.appendChild(temperature);
+                        entry.appendChild(motion);
+                        entry.appendChild(voltage);
+                    }
+
+                    TransformerFactory transformerFactory = TransformerFactory.newInstance();
+                    Transformer transformer = transformerFactory.newTransformer();
+                    DOMSource domSource = new DOMSource(document);
+                    StreamResult streamResult = new StreamResult(new File(new JFileChooser().getFileSystemView().getDefaultDirectory().toString() + "/WB-XML-8.xml"));
+                    transformer.transform(domSource, streamResult);
+
+
+                    FileWriter fileWriter = new FileWriter(new JFileChooser().getFileSystemView().getDefaultDirectory().toString() + "/WB-JSON-8.txt");
+                    fileWriter.write(new Gson().toJson(entryGraphArrayList));
+                    fileWriter.flush();
+                    fileWriter.close();
+
+                } catch (IOException | ParserConfigurationException | TransformerException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, 0, 5000);
+    }
+
+
+    /**
+     * Статический метод, предназначенный для подписки на топики и сохранения файлов в формате XML и JSON
+     * @param subscriber   экземпляр подписчика
+     * @param topicHandler экземпляр класса для сохранения значений
+     * @param address      номер стенда для сохранения в записях
+     */
+    public static void handleForFiles(IMqttClient subscriber, TopicHandler topicHandler, int address) {
+        ArrayList<Entry> entryArrayList = new ArrayList<>();
+        try {
+            subscriber.subscribe("/devices/wb-msw-v3_21/controls/Current Motion", (topic, msg) -> {
+                System.out.println("Current Motion: " + msg);
+                topicHandler.setMotion(msg.toString());
+            });
+            subscriber.subscribe("/devices/wb-msw-v3_21/controls/Sound Level", (topic, msg) -> {
+                System.out.println("Sound Level: " + msg);
+                topicHandler.setSound(msg.toString());
+            });
+            subscriber.subscribe("/devices/wb-ms_11/controls/Illuminance", (topic, msg) -> {
+                System.out.println("Illuminance: " + msg);
+                topicHandler.setIlluminance(msg.toString());
+            });
+            subscriber.subscribe("/devices/wb-ms_11/controls/Temperature", (topic, msg) -> {
+                System.out.println("Temperature: " + msg);
+                topicHandler.setTemperature(msg.toString());
+            });
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    entryArrayList.add(topicHandler.getEntry(address));
+
+
+                    DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
+                    DocumentBuilder documentBuilder = documentFactory.newDocumentBuilder();
+                    Document document = documentBuilder.newDocument();
+                    Element root = document.createElement("root");
+                    document.appendChild(root);
+                    for (int i = 0; i < entryArrayList.size(); i++) {
+                        Attr number = document.createAttribute("n");
+                        number.setValue(String.valueOf(i));
+                        Element entry = document.createElement("Entry");
+                        entry.setAttributeNode(number);
+                        Element temperature = document.createElement("temperature");
+                        temperature.appendChild(document.createTextNode(entryArrayList.get(i).getTemperature()));
+                        Element illuminance = document.createElement("illuminance");
+                        illuminance.appendChild(document.createTextNode(entryArrayList.get(i).getIlluminance()));
+                        Element motion = document.createElement("motion");
+                        motion.appendChild(document.createTextNode(entryArrayList.get(i).getMotion()));
+                        Element sound = document.createElement("sound");
+                        sound.appendChild(document.createTextNode(entryArrayList.get(i).getSound()));
+                        Element time = document.createElement("time");
+                        time.appendChild(document.createTextNode(entryArrayList.get(i).getTime()));
+                        Element ip = document.createElement("ip");
+                        ip.appendChild(document.createTextNode(String.valueOf(entryArrayList.get(i).getIp())));
+                        root.appendChild(entry);
+                        entry.appendChild(temperature);
+                        entry.appendChild(illuminance);
+                        entry.appendChild(motion);
+                        entry.appendChild(sound);
+                        entry.appendChild(time);
+                        entry.appendChild(ip);
+                    }
+
+                    TransformerFactory transformerFactory = TransformerFactory.newInstance();
+                    Transformer transformer = transformerFactory.newTransformer();
+                    DOMSource domSource = new DOMSource(document);
+                    StreamResult streamResult = new StreamResult(new File(new JFileChooser().getFileSystemView().getDefaultDirectory().toString() + "/WB-XML.xml"));
+                    transformer.transform(domSource, streamResult);
+
+
+                    FileWriter fileWriter = new FileWriter(new JFileChooser().getFileSystemView().getDefaultDirectory().toString() + "/WB-JSON.txt");
+                    fileWriter.write(new Gson().toJson(entryArrayList));
+                    fileWriter.flush();
+                    fileWriter.close();
+
+                } catch (IOException | ParserConfigurationException | TransformerException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, 0, 5000);
+    }
+
+    public static IMqttClient getConnectedSubscriber(int address) {
+        try {
+            IMqttClient subscriber = new MqttClient("tcp://192.168.2." + address + ":1883", UUID.randomUUID().toString());
             MqttConnectOptions options = new MqttConnectOptions();
             options.setAutomaticReconnect(true);
             options.setCleanSession(true);
             options.setConnectionTimeout(10);
             subscriber.connect(options);
-            TopicHandler topicHandler = TopicHandler.getInstance();
-            ArrayList<Entry> entryArrayList = new ArrayList<>();
-            ArrayList<Entry8> entry8ArrayList = new ArrayList<>();
-            Scanner in = new Scanner(System.in);
-            int n = 0;
-            n = in.nextInt();
-            switch (n) {
-                case 1:
-                    subscriber.subscribe("/devices/wb-msw-v3_21/controls/Current Motion", (topic, msg) -> {
-                        System.out.println("Current Motion: " + msg);
-                        topicHandler.setMotion(msg.toString());
-                    });
-                    subscriber.subscribe("/devices/wb-msw-v3_21/controls/Sound Level", (topic, msg) -> {
-                        System.out.println("Sound Level: " + msg);
-                        topicHandler.setSound(msg.toString());
-                    });
-                    subscriber.subscribe("/devices/wb-ms_11/controls/Illuminance", (topic, msg) -> {
-                        System.out.println("Illuminance: " + msg);
-                        topicHandler.setIlluminance(msg.toString());
-                    });
-                    subscriber.subscribe("/devices/wb-ms_11/controls/Temperature", (topic, msg) -> {
-                        System.out.println("Temperature: " + msg);
-                        topicHandler.setTemperature(msg.toString());
-                    });
-                    new Timer().schedule(new TimerTask() {
-                        @Override
-                        public void run() {
-                            try {
-                                entryArrayList.add(topicHandler.getEntry());
-
-
-                                DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
-                                DocumentBuilder documentBuilder = documentFactory.newDocumentBuilder();
-                                Document document = documentBuilder.newDocument();
-                                Element root = document.createElement("root");
-                                document.appendChild(root);
-                                for (int i = 0; i < entryArrayList.size(); i++) {
-                                    Attr number = document.createAttribute("n");
-                                    number.setValue(String.valueOf(i));
-                                    Element entry = document.createElement("Entry");
-                                    entry.setAttributeNode(number);
-                                    Element temperature = document.createElement("temperature");
-                                    temperature.appendChild(document.createTextNode(entryArrayList.get(i).getTemperature()));
-                                    Element illuminance = document.createElement("illuminance");
-                                    illuminance.appendChild(document.createTextNode(entryArrayList.get(i).getIlluminance()));
-                                    Element motion = document.createElement("motion");
-                                    motion.appendChild(document.createTextNode(entryArrayList.get(i).getMotion()));
-                                    Element sound = document.createElement("sound");
-                                    sound.appendChild(document.createTextNode(entryArrayList.get(i).getSound()));
-                                    Element time = document.createElement("time");
-                                    time.appendChild(document.createTextNode(entryArrayList.get(i).getTime()));
-                                    Element ip = document.createElement("ip");
-                                    ip.appendChild(document.createTextNode(String.valueOf(entryArrayList.get(i).getIp())));
-                                    root.appendChild(entry);
-                                    entry.appendChild(temperature);
-                                    entry.appendChild(illuminance);
-                                    entry.appendChild(motion);
-                                    entry.appendChild(sound);
-                                    entry.appendChild(time);
-                                    entry.appendChild(ip);
-                                }
-
-                                TransformerFactory transformerFactory = TransformerFactory.newInstance();
-                                Transformer transformer = transformerFactory.newTransformer();
-                                DOMSource domSource = new DOMSource(document);
-                                StreamResult streamResult = new StreamResult(new File(new JFileChooser().getFileSystemView().getDefaultDirectory().toString() + "/WB-XML.xml"));
-                                transformer.transform(domSource, streamResult);
-
-
-                                FileWriter fileWriter = new FileWriter(new JFileChooser().getFileSystemView().getDefaultDirectory().toString() + "/WB-JSON.txt");
-                                fileWriter.write(new Gson().toJson(entryArrayList));
-                                fileWriter.flush();
-                                fileWriter.close();
-
-                            } catch (IOException | ParserConfigurationException | TransformerException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }, 0, 5000);
-                    break;
-                case 2:
-                    subscriber.subscribe("/devices/wb-map12e_23/controls/Ch 1 P L1", (topic, msg) -> {
-                        System.out.println("Voltage: " + msg);
-                        topicHandler.setVoltage(msg.toString());
-                    });
-                    subscriber.subscribe("/devices/wb-msw-v3_21/controls/Current Motion", (topic, msg) -> {
-                        System.out.println("Current Motion: " + msg);
-                        topicHandler.setMotion(msg.toString());
-                    });
-                    subscriber.subscribe("/devices/wb-ms_11/controls/Temperature", (topic, msg) -> {
-                        System.out.println("Temperature: " + msg);
-                        topicHandler.setTemperature(msg.toString());
-                    });
-                    new Timer().schedule(new TimerTask() {
-                        @Override
-                        public void run() {
-                            try {
-                                entry8ArrayList.add(topicHandler.getEntry8());
-
-
-                                DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
-                                DocumentBuilder documentBuilder = documentFactory.newDocumentBuilder();
-                                Document document = documentBuilder.newDocument();
-                                Element root = document.createElement("root");
-                                document.appendChild(root);
-                                for (int i = 0; i < entry8ArrayList.size(); i++) {
-                                    Attr number = document.createAttribute("n");
-                                    number.setValue(String.valueOf(i));
-                                    Element entry = document.createElement("Entry");
-                                    entry.setAttributeNode(number);
-                                    Element temperature = document.createElement("temperature");
-                                    temperature.appendChild(document.createTextNode(entry8ArrayList.get(i).getTemperature()));
-                                    Element motion = document.createElement("motion");
-                                    motion.appendChild(document.createTextNode(entry8ArrayList.get(i).getMotion()));
-                                    Element voltage = document.createElement("voltage");
-                                    voltage.appendChild(document.createTextNode(entry8ArrayList.get(i).getVoltage()));
-                                    root.appendChild(entry);
-                                    entry.appendChild(temperature);
-                                    entry.appendChild(motion);
-                                    entry.appendChild(voltage);
-                                }
-
-                                TransformerFactory transformerFactory = TransformerFactory.newInstance();
-                                Transformer transformer = transformerFactory.newTransformer();
-                                DOMSource domSource = new DOMSource(document);
-                                StreamResult streamResult = new StreamResult(new File(new JFileChooser().getFileSystemView().getDefaultDirectory().toString() + "/WB-XML-8.xml"));
-                                transformer.transform(domSource, streamResult);
-
-
-                                FileWriter fileWriter = new FileWriter(new JFileChooser().getFileSystemView().getDefaultDirectory().toString() + "/WB-JSON-8.txt");
-                                fileWriter.write(new Gson().toJson(entry8ArrayList));
-                                fileWriter.flush();
-                                fileWriter.close();
-
-                            } catch (IOException | ParserConfigurationException | TransformerException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }, 0, 5000);
-                    break;
-                case 3:
-                    FileParser.parseJSON(Paths.get(new JFileChooser().getFileSystemView().getDefaultDirectory().getPath()+"/WB-JSON.txt"));
-                    FileParser.parseXML(new JFileChooser().getFileSystemView().getDefaultDirectory().getPath()+"/WB-XML.xml");
-            }
-
+            return subscriber;
         } catch (MqttException e) {
             e.printStackTrace();
         }
-
+        return null;
     }
 
 }

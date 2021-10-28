@@ -1,5 +1,8 @@
 package stu.ilexa;
 
+/**
+ * Класс, предназначенный для хранения данных одной записи для практической работы №7
+ */
 public class Entry {
     private final String temperature;
     private final String illuminance;

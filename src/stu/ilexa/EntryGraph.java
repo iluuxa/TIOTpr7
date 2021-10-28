@@ -1,11 +1,14 @@
 package stu.ilexa;
 
-public class Entry8 {
+/**
+ * Класс, предназначенный для хранения данных одной записи для практической работы №8
+ */
+public class EntryGraph {
     private final String temperature;
     private final String motion;
     private final String voltage;
 
-    public Entry8(String temperature, String motion, String voltage) {
+    public EntryGraph(String temperature, String motion, String voltage) {
         this.temperature = temperature;
         this.motion = motion;
         this.voltage = voltage;
