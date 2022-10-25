@@ -84,12 +84,11 @@ public class Main {
             @Override
             public void run() {
                 entryGraphArrayList.add(topicHandler.getEntry8());
-                StringBuilder csvString = new StringBuilder("Humidity,Temperature,Voltage\n");
+                StringBuilder csvString = new StringBuilder("Humidity,Temperature,Voltage");
                 for (EntryGraph entry :
                         entryGraphArrayList) {
-                    csvString.append(entry.getHumidity()).append(",").append(entry.getTemperature()).append(",").append(entry.getVoltage()).append("\n");
+                    csvString.append("\n").append(entry.getHumidity()).append(",").append(entry.getTemperature()).append(",").append(entry.getVoltage());
                 }
-                csvString = new StringBuilder(csvString.substring(0, csvString.length() - 1));
                 try {
                     FileWriter fileWriter = new FileWriter(new JFileChooser().getFileSystemView().getDefaultDirectory().toString() + "/WB-CSV.csv");
                     fileWriter.write(csvString.toString());
