@@ -40,7 +40,9 @@ public class Main {
         System.out.println("Введите режим работы программы:\n1 - сохранение данных для варианта 7 работы 7\n2 - сохранение данных для варианта 7 работы 8\n3 - Вывод сохранённых данных в консоль");
         int n = in.nextInt();
         if (n == 3) { //Вызов методов парсинга XML и JSON файлов. Чтение проводится из директории "Документы"
+            System.out.println(new JFileChooser().getFileSystemView().getDefaultDirectory().getPath() + "/WB-JSON.txt");
             FileParser.parseJSON(Paths.get(new JFileChooser().getFileSystemView().getDefaultDirectory().getPath() + "/WB-JSON.txt"));
+            System.out.println(new JFileChooser().getFileSystemView().getDefaultDirectory().getPath() + "/WB-XML.xml");
             FileParser.parseXML(new JFileChooser().getFileSystemView().getDefaultDirectory().getPath() + "/WB-XML.xml");
         } else {
             System.out.println("Введите номер стенда:");
@@ -70,10 +72,10 @@ public class Main {
                 topicHandler.setVoltage(msg.toString());
             });
             subscriber.subscribe("/devices/wb-msw-v3_21/controls/Humidity", (topic, msg) -> {
-                System.out.println("Current Motion: " + msg);
+                System.out.println("Humidity: " + msg);
                 topicHandler.setHumidity(msg.toString());
             });
-            subscriber.subscribe("/devices/wb-ms_11/controls/Temperature", (topic, msg) -> {
+            subscriber.subscribe("/devices/wb-m1w2_14/controls/External Sensor 1", (topic, msg) -> {
                 System.out.println("Temperature: " + msg);
                 topicHandler.setTemperature(msg.toString());
             });
@@ -117,12 +119,12 @@ public class Main {
                 System.out.println("Current Motion: " + msg);
                 topicHandler.setMotion(msg.toString());
             });
-            subscriber.subscribe("devices/wb-ms_11/controls/Air Quality (VOC)", (topic, msg) -> {
-                System.out.println("Sound Level: " + msg);
+            subscriber.subscribe("/devices/wb-msw-v3_21/controls/Air Quality (VOC)", (topic, msg) -> {
+                System.out.println("Air Quality: " + msg);
                 topicHandler.setAirQuality(msg.toString());
             });
             subscriber.subscribe("/devices/wb-msw-v3_21/controls/Humidity", (topic, msg) -> {
-                System.out.println("Illuminance: " + msg);
+                System.out.println("Humidity: " + msg);
                 topicHandler.setHumidity(msg.toString());
             });
             subscriber.subscribe("/devices/wb-m1w2_14/controls/External Sensor 1", (topic, msg) -> {
@@ -151,21 +153,21 @@ public class Main {
                         entry.setAttributeNode(number);
                         Element temperature = document.createElement("temperature");
                         temperature.appendChild(document.createTextNode(entryArrayList.get(i).getTemperature()));
-                        Element illuminance = document.createElement("illuminance");
-                        illuminance.appendChild(document.createTextNode(entryArrayList.get(i).getHumidity()));
+                        Element humidity = document.createElement("humidity");
+                        humidity.appendChild(document.createTextNode(entryArrayList.get(i).getHumidity()));
                         Element motion = document.createElement("motion");
                         motion.appendChild(document.createTextNode(entryArrayList.get(i).getMotion()));
-                        Element sound = document.createElement("sound");
-                        sound.appendChild(document.createTextNode(entryArrayList.get(i).getAirQuality()));
+                        Element airQuality = document.createElement("airQuality");
+                        airQuality.appendChild(document.createTextNode(entryArrayList.get(i).getAirQuality()));
                         Element time = document.createElement("time");
                         time.appendChild(document.createTextNode(entryArrayList.get(i).getTime()));
                         Element ip = document.createElement("ip");
                         ip.appendChild(document.createTextNode(String.valueOf(entryArrayList.get(i).getIp())));
                         root.appendChild(entry);
                         entry.appendChild(temperature);
-                        entry.appendChild(illuminance);
+                        entry.appendChild(humidity);
                         entry.appendChild(motion);
-                        entry.appendChild(sound);
+                        entry.appendChild(airQuality);
                         entry.appendChild(time);
                         entry.appendChild(ip);
                     }

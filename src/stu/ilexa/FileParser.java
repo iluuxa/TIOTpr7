@@ -32,16 +32,16 @@ public class FileParser {
             for (int i = 0; i < arr.length(); i++) {
 
                 String temperature = arr.getJSONObject(i).getString("temperature");
-                String illuminance = arr.getJSONObject(i).getString("illuminance");
+                String humidity = arr.getJSONObject(i).getString("humidity");
                 String motion = arr.getJSONObject(i).getString("motion");
-                String sound = arr.getJSONObject(i).getString("sound");
+                String airQuality = arr.getJSONObject(i).getString("airQuality");
                 String time = arr.getJSONObject(i).getString("time");
                 String ip = String.valueOf(arr.getJSONObject(i).getInt("ip"));
                 System.out.println("    Entry " + i + ":");
                 System.out.println("        Temperature: " + temperature);
-                System.out.println("        Illuminance: " + illuminance);
+                System.out.println("        humidity: " + humidity);
                 System.out.println("        Motion: " + motion);
-                System.out.println("        Sound: " + sound);
+                System.out.println("        airQuality: " + airQuality);
                 System.out.println("        Time: " + time);
                 System.out.println("        Ip: " + ip);
             }
@@ -66,9 +66,9 @@ public class FileParser {
             for (int i = 0; i < entries.getLength(); i++) {
                 System.out.println("    Entry " + i + ":");
                 System.out.println("        Temperature: " + ((Element) (entries.item(i))).getElementsByTagName("temperature").item(0).getTextContent());
-                System.out.println("        Illuminance: " + ((Element) (entries.item(i))).getElementsByTagName("illuminance").item(0).getTextContent());
+                System.out.println("        humidity: " + ((Element) (entries.item(i))).getElementsByTagName("humidity").item(0).getTextContent());
                 System.out.println("        Motion: " + ((Element) (entries.item(i))).getElementsByTagName("motion").item(0).getTextContent());
-                System.out.println("        Sound: " + ((Element) (entries.item(i))).getElementsByTagName("sound").item(0).getTextContent());
+                System.out.println("        airQuality: " + ((Element) (entries.item(i))).getElementsByTagName("airQuality").item(0).getTextContent());
                 System.out.println("        Time: " + ((Element) (entries.item(i))).getElementsByTagName("time").item(0).getTextContent());
                 System.out.println("        Ip: " + ((Element) (entries.item(i))).getElementsByTagName("ip").item(0).getTextContent());
             }

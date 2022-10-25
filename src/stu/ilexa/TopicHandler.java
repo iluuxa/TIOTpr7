@@ -4,11 +4,11 @@ package stu.ilexa;
  * Класс-синглтон, предназначенный для сохранения данных в течении 5 секунд и их возврата в виде записи для файла
  */
 public class TopicHandler {
-    private String temperature = "";
-    private String humidity = "";
-    private String motion = "";
-    private String airQuality = "";
-    private String voltage = ""; //Используется для работы №8
+    private String temperature = "0";
+    private String humidity = "0";
+    private String motion = "0";
+    private String airQuality = "0";
+    private String voltage = "0"; //Используется для работы №8
 
     private static TopicHandler topicHandler;
 
