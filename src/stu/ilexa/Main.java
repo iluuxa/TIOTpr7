@@ -32,11 +32,12 @@ public class Main {
 
     /**
      * Основной метод, предназначенный для выбора режима работы и вызова соответствующих методов
+     *
      * @param args аргументы командной строки. Не используются
      */
     public static void main(String[] args) {
         Scanner in = new Scanner(System.in);
-        System.out.println("Введите режим работы программы:\n1 - сохранение данных для варианта 4 работы 7\n2 - сохранение данных для варианта 4 работы 8\n3 - Вывод сохранённых данных в консоль");
+        System.out.println("Введите режим работы программы:\n1 - сохранение данных для варианта 7 работы 7\n2 - сохранение данных для варианта 7 работы 8\n3 - Вывод сохранённых данных в консоль");
         int n = in.nextInt();
         if (n == 3) { //Вызов методов парсинга XML и JSON файлов. Чтение проводится из директории "Документы"
             FileParser.parseJSON(Paths.get(new JFileChooser().getFileSystemView().getDefaultDirectory().getPath() + "/WB-JSON.txt"));
@@ -57,6 +58,7 @@ public class Main {
 
     /**
      * Статический метод, предназначенный для подписки на топики и сохранения файлов для последующего их преобразования в графики для практической работы №8
+     *
      * @param subscriber   экземпляр подписчика
      * @param topicHandler экземпляр класса для сохранения значений
      */
@@ -67,9 +69,9 @@ public class Main {
                 System.out.println("Voltage: " + msg);
                 topicHandler.setVoltage(msg.toString());
             });
-            subscriber.subscribe("/devices/wb-msw-v3_21/controls/Current Motion", (topic, msg) -> {
+            subscriber.subscribe("/devices/wb-msw-v3_21/controls/Humidity", (topic, msg) -> {
                 System.out.println("Current Motion: " + msg);
-                topicHandler.setMotion(msg.toString());
+                topicHandler.setHumidity(msg.toString());
             });
             subscriber.subscribe("/devices/wb-ms_11/controls/Temperature", (topic, msg) -> {
                 System.out.println("Temperature: " + msg);
@@ -81,47 +83,22 @@ public class Main {
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
+                entryGraphArrayList.add(topicHandler.getEntry8());
+                StringBuilder csvString = new StringBuilder("Humidity,Temperature,Voltage\n");
+                for (EntryGraph entry :
+                        entryGraphArrayList) {
+                    csvString.append(entry.getHumidity()).append(",").append(entry.getTemperature()).append(",").append(entry.getVoltage()).append("\n");
+                }
+                csvString = new StringBuilder(csvString.substring(0, csvString.length() - 1));
                 try {
-                    entryGraphArrayList.add(topicHandler.getEntry8());
-
-
-                    DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
-                    DocumentBuilder documentBuilder = documentFactory.newDocumentBuilder();
-                    Document document = documentBuilder.newDocument();
-                    Element root = document.createElement("root");
-                    document.appendChild(root);
-                    for (int i = 0; i < entryGraphArrayList.size(); i++) {
-                        Attr number = document.createAttribute("n");
-                        number.setValue(String.valueOf(i));
-                        Element entry = document.createElement("Entry");
-                        entry.setAttributeNode(number);
-                        Element temperature = document.createElement("temperature");
-                        temperature.appendChild(document.createTextNode(entryGraphArrayList.get(i).getTemperature()));
-                        Element motion = document.createElement("motion");
-                        motion.appendChild(document.createTextNode(entryGraphArrayList.get(i).getMotion()));
-                        Element voltage = document.createElement("voltage");
-                        voltage.appendChild(document.createTextNode(entryGraphArrayList.get(i).getVoltage()));
-                        root.appendChild(entry);
-                        entry.appendChild(temperature);
-                        entry.appendChild(motion);
-                        entry.appendChild(voltage);
-                    }
-
-                    TransformerFactory transformerFactory = TransformerFactory.newInstance();
-                    Transformer transformer = transformerFactory.newTransformer();
-                    DOMSource domSource = new DOMSource(document);
-                    StreamResult streamResult = new StreamResult(new File(new JFileChooser().getFileSystemView().getDefaultDirectory().toString() + "/WB-XML-8.xml"));
-                    transformer.transform(domSource, streamResult);
-
-
-                    FileWriter fileWriter = new FileWriter(new JFileChooser().getFileSystemView().getDefaultDirectory().toString() + "/WB-JSON-8.txt");
-                    fileWriter.write(new Gson().toJson(entryGraphArrayList));
+                    FileWriter fileWriter = new FileWriter(new JFileChooser().getFileSystemView().getDefaultDirectory().toString() + "/WB-CSV.csv");
+                    fileWriter.write(csvString.toString());
                     fileWriter.flush();
                     fileWriter.close();
-
-                } catch (IOException | ParserConfigurationException | TransformerException e) {
-                    e.printStackTrace();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
+
             }
         }, 0, 5000);
     }
@@ -129,6 +106,7 @@ public class Main {
 
     /**
      * Статический метод, предназначенный для подписки на топики и сохранения файлов в формате XML и JSON
+     *
      * @param subscriber   экземпляр подписчика
      * @param topicHandler экземпляр класса для сохранения значений
      * @param address      номер стенда для сохранения в записях
@@ -140,15 +118,15 @@ public class Main {
                 System.out.println("Current Motion: " + msg);
                 topicHandler.setMotion(msg.toString());
             });
-            subscriber.subscribe("/devices/wb-msw-v3_21/controls/Sound Level", (topic, msg) -> {
+            subscriber.subscribe("devices/wb-ms_11/controls/Air Quality (VOC)", (topic, msg) -> {
                 System.out.println("Sound Level: " + msg);
-                topicHandler.setSound(msg.toString());
+                topicHandler.setAirQuality(msg.toString());
             });
-            subscriber.subscribe("/devices/wb-ms_11/controls/Illuminance", (topic, msg) -> {
+            subscriber.subscribe("/devices/wb-msw-v3_21/controls/Humidity", (topic, msg) -> {
                 System.out.println("Illuminance: " + msg);
-                topicHandler.setIlluminance(msg.toString());
+                topicHandler.setHumidity(msg.toString());
             });
-            subscriber.subscribe("/devices/wb-ms_11/controls/Temperature", (topic, msg) -> {
+            subscriber.subscribe("/devices/wb-m1w2_14/controls/External Sensor 1", (topic, msg) -> {
                 System.out.println("Temperature: " + msg);
                 topicHandler.setTemperature(msg.toString());
             });
@@ -175,11 +153,11 @@ public class Main {
                         Element temperature = document.createElement("temperature");
                         temperature.appendChild(document.createTextNode(entryArrayList.get(i).getTemperature()));
                         Element illuminance = document.createElement("illuminance");
-                        illuminance.appendChild(document.createTextNode(entryArrayList.get(i).getIlluminance()));
+                        illuminance.appendChild(document.createTextNode(entryArrayList.get(i).getHumidity()));
                         Element motion = document.createElement("motion");
                         motion.appendChild(document.createTextNode(entryArrayList.get(i).getMotion()));
                         Element sound = document.createElement("sound");
-                        sound.appendChild(document.createTextNode(entryArrayList.get(i).getSound()));
+                        sound.appendChild(document.createTextNode(entryArrayList.get(i).getAirQuality()));
                         Element time = document.createElement("time");
                         time.appendChild(document.createTextNode(entryArrayList.get(i).getTime()));
                         Element ip = document.createElement("ip");

@@ -5,12 +5,12 @@ package stu.ilexa;
  */
 public class EntryGraph {
     private final String temperature;
-    private final String motion;
+    private final String humidity;
     private final String voltage;
 
-    public EntryGraph(String temperature, String motion, String voltage) {
+    public EntryGraph(String temperature, String humidity, String voltage) {
         this.temperature = temperature;
-        this.motion = motion;
+        this.humidity = humidity;
         this.voltage = voltage;
     }
 
@@ -18,8 +18,8 @@ public class EntryGraph {
         return temperature;
     }
 
-    public String getMotion() {
-        return motion;
+    public String getHumidity() {
+        return humidity;
     }
 
     public String getVoltage() {

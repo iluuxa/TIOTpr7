@@ -5,9 +5,9 @@ package stu.ilexa;
  */
 public class TopicHandler {
     private String temperature = "";
-    private String illuminance = "";
+    private String humidity = "";
     private String motion = "";
-    private String sound = "";
+    private String airQuality = "";
     private String voltage = ""; //Используется для работы №8
 
     private static TopicHandler topicHandler;
@@ -16,16 +16,16 @@ public class TopicHandler {
         topicHandler.temperature = temperature;
     }
 
-    public void setIlluminance(String illuminance) {
-        topicHandler.illuminance = illuminance;
+    public void setHumidity(String humidity) {
+        topicHandler.humidity = humidity;
     }
 
     public void setMotion(String motion) {
         topicHandler.motion = motion;
     }
 
-    public void setSound(String sound) {
-        topicHandler.sound = sound;
+    public void setAirQuality(String airQuality) {
+        topicHandler.airQuality = airQuality;
     }
 
     public void setVoltage(String voltage) {
@@ -46,7 +46,7 @@ public class TopicHandler {
      * @return запись для хранения в списке и сохранения в файле
      */
     public Entry getEntry(int ip) {
-        return new Entry(topicHandler.temperature, topicHandler.illuminance, topicHandler.motion, topicHandler.sound, java.util.Calendar.getInstance().getTime().toString(), ip);
+        return new Entry(topicHandler.temperature, topicHandler.humidity, topicHandler.motion, topicHandler.airQuality, java.util.Calendar.getInstance().getTime().toString(), ip);
     }
 
     /**
@@ -55,7 +55,7 @@ public class TopicHandler {
      * @return запись для хранения в списке и сохранения в файле
      */
     public EntryGraph getEntry8() { //Используется для работы №8
-        return new EntryGraph(topicHandler.temperature, topicHandler.motion, topicHandler.voltage);
+        return new EntryGraph(topicHandler.temperature, topicHandler.humidity, topicHandler.voltage);
     }
 
 }
